@@ -1,4 +1,5 @@
-import 'package:cine_stream/screens/splash_screen.dart';
+
+import 'package:cine_stream/screens/onboarding_screen.dart';
 import 'package:flutter/material.dart';
 
 class App extends StatelessWidget {
@@ -10,7 +11,7 @@ class App extends StatelessWidget {
       title: 'Batch35D Classwork',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(primarySwatch: Colors.blue),
-      home: SplashScreen(),
+      home: OnboardingScreen(),
       
     );
   }
