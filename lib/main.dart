@@ -22,7 +22,7 @@ class MyApp extends StatelessWidget {
         "/onboarding": (_) => const OnboardingScreen(),
         "/signup": (_) => const SignupScreen(),
         "/signin": (_) => const SignInScreen(),
-        "/dashboard": (_) => const DashboardScreen(),
+        "/dashboard": (_) => const BottomNavigationScreen(),
       },
     );
   }
