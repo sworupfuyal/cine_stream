@@ -4,6 +4,7 @@ import 'screens/onboarding_screen.dart';
 import 'screens/signup_screen.dart';
 import 'screens/signin_screen.dart';
 import 'screens/dashboard_screen.dart';
+import 'themes/theme.dart';
 
 void main() {
   runApp(const MyApp());
@@ -16,6 +17,8 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
+        theme: AppTheme.darkTheme,
+
       initialRoute: "/splash",
       routes: {
         "/splash": (_) => const SplashScreen(),
