@@ -24,16 +24,19 @@ class _SignupScreenState extends State<SignupScreen> {
 
       Future.delayed(const Duration(seconds: 2), () {
         setState(() => isLoading = false);
-        ScaffoldMessenger.of(context)
-            .showSnackBar(const SnackBar(content: Text("Signup Successful")));
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Account created successfully")),
+        );
+        Navigator.pushReplacementNamed(context, "/signin");
       });
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return Scaffold(
-      backgroundColor: Colors.black,
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(22),
@@ -42,39 +45,29 @@ class _SignupScreenState extends State<SignupScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const SizedBox(height: 30),
+                const SizedBox(height: 20),
 
-                const Center(
-                  child: Text(
-                    "Welcome to Cinestream",
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 28,
-                    ),
+                Center(
+                  child: Column(
+                    children: [
+                      Text(
+                        "Welcome to CineStream",
+                        style: theme.textTheme.headlineMedium,
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        "STREAM WITHOUT LIMITS",
+                        style: theme.textTheme.bodyMedium,
+                      ),
+                    ],
                   ),
                 ),
 
-                const SizedBox(height: 6),
+                const SizedBox(height: 50),
 
-                const Center(
-                  child: Text(
-                    "STREAM WITHOUT LIMITS",
-                    style: TextStyle(
-                      color: Colors.white70,
-                      fontSize: 14,
-                      letterSpacing: 1.2,
-                    ),
-                  ),
-                ),
-
-                const SizedBox(height: 40),
-
-                const Text(
+                Text(
                   "Create Account",
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 26,
-                  ),
+                  style: theme.textTheme.headlineLarge,
                 ),
 
                 const SizedBox(height: 30),
@@ -84,7 +77,7 @@ class _SignupScreenState extends State<SignupScreen> {
                   label: "Username",
                   icon: Icons.person,
                   validator: (v) =>
-                      v!.isEmpty ? "Please enter a username" : null,
+                      v == null || v.isEmpty ? "Username is required" : null,
                 ),
 
                 const SizedBox(height: 20),
@@ -94,8 +87,15 @@ class _SignupScreenState extends State<SignupScreen> {
                   label: "Password",
                   icon: Icons.lock,
                   isPassword: true,
-                  validator: (v) =>
-                      v!.length < 6 ? "Password must be at least 6 characters" : null,
+                  validator: (v) {
+                    if (v == null || v.isEmpty) {
+                      return "Password is required";
+                    }
+                    if (v.length < 6) {
+                      return "Minimum 6 characters required";
+                    }
+                    return null;
+                  },
                 ),
 
                 const SizedBox(height: 20),
@@ -116,7 +116,7 @@ class _SignupScreenState extends State<SignupScreen> {
                   },
                 ),
 
-                const SizedBox(height: 30),
+                const SizedBox(height: 35),
 
                 AppButton(
                   text: "Sign Up",
@@ -124,18 +124,16 @@ class _SignupScreenState extends State<SignupScreen> {
                   onPressed: handleSignup,
                 ),
 
-                const SizedBox(height: 25),
+                const SizedBox(height: 30),
 
                 Center(
                   child: TextButton(
                     onPressed: () {
-  Navigator.pushReplacementNamed(context, "/signin");
-
-                        
+                      Navigator.pushReplacementNamed(context, "/signin");
                     },
-                    child: const Text(
-                      "Already a member? Sign In",
-                      style: TextStyle(color: Colors.white70),
+                    child: Text(
+                      "Already have an account? Sign In",
+                      style: theme.textTheme.bodyMedium,
                     ),
                   ),
                 ),
