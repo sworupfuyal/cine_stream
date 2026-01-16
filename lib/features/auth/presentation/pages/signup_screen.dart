@@ -16,16 +16,25 @@ class SignupScreen extends ConsumerStatefulWidget {
 class _SignupScreenState extends ConsumerState<SignupScreen> {
   // Form key
   final _formKey = GlobalKey<FormState>();
+  
+  // ScaffoldMessenger key for safe snackbar access
+  final _scaffoldMessengerKey = GlobalKey<ScaffoldMessengerState>();
 
   // Text controllers
   late final TextEditingController usernameController;
+  late final TextEditingController emailController;
   late final TextEditingController passwordController;
   late final TextEditingController confirmPasswordController;
+
+  // Track if we've already handled the success to prevent duplicate actions
+  bool _hasHandledSuccess = false;
+  bool _isNavigating = false;
 
   @override
   void initState() {
     super.initState();
     usernameController = TextEditingController();
+    emailController = TextEditingController();
     passwordController = TextEditingController();
     confirmPasswordController = TextEditingController();
   }
@@ -33,64 +42,76 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
   @override
   void dispose() {
     usernameController.dispose();
+    emailController.dispose();
     passwordController.dispose();
     confirmPasswordController.dispose();
     super.dispose();
   }
 
-  // Signup handler - synchronous wrapper
+  // Signup handler
   void handleSignup() {
-    if (!_formKey.currentState!.validate()) return;
+    // Reset the success flag when starting a new registration
+    _hasHandledSuccess = false;
     
-    // Call async method without awaiting
+    if (!_formKey.currentState!.validate()) return;
+
     ref.read(authViewModelProvider.notifier).register(
-      userName: usernameController.text.trim(),
+      fullName: usernameController.text.trim(),
+      email: emailController.text.trim(),
       password: passwordController.text.trim(),
+      confirmPassword: confirmPasswordController.text.trim(),
     );
   }
 
-  // Show snackbar safely
-  void _showSnackBar(String message, Color backgroundColor) {
-    if (!mounted) return;
-    
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+  void _handleSuccess() {
+    // Prevent duplicate handling
+    if (_hasHandledSuccess || _isNavigating) return;
+    _hasHandledSuccess = true;
+    _isNavigating = true;
+
+    // Use the ScaffoldMessenger key directly
+    _scaffoldMessengerKey.currentState?.showSnackBar(
+      const SnackBar(
+        content: Text("Account created successfully"),
+        backgroundColor: Colors.green,
+        duration: Duration(milliseconds: 1500),
+      ),
+    );
+
+    // Navigate after a short delay
+    Future.delayed(const Duration(milliseconds: 800), () {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(message),
-          backgroundColor: backgroundColor,
-        ),
-      );
+      Navigator.pushReplacementNamed(context, "/signin");
     });
   }
 
-  // Navigate safely
-  void _navigateToSignIn() {
-    if (!mounted) return;
+  void _handleError(String message) {
+    // Don't show error if we're already navigating away
+    if (_isNavigating) return;
     
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) {
-        Navigator.pushReplacementNamed(context, "/signin");
-      }
-    });
+    // Use the ScaffoldMessenger key directly
+    _scaffoldMessengerKey.currentState?.showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Colors.red,
+        duration: const Duration(seconds: 3),
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    // Listen to auth state changes safely
+    // Listen to auth state changes
     ref.listen<AuthState>(
       authViewModelProvider,
       (previous, next) {
-        if (next.status == AuthStatus.registered) {
-          _showSnackBar("Account created successfully", Colors.green);
-          _navigateToSignIn();
-        }
 
-        if (next.status == AuthStatus.error) {
-          _showSnackBar(
-            next.errorMessage ?? "Registration failed",
-            Colors.red,
-          );
+          print('Auth Status Changed: ${next.status}'); // Add this
+          print('Error Message: ${next.errorMessage}'); 
+        if (next.status == AuthStatus.registered) {
+          _handleSuccess();
+        } else if (next.status == AuthStatus.error) {
+          _handleError(next.errorMessage ?? "Registration failed");
         }
       },
     );
@@ -99,8 +120,10 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
     final authState = ref.watch(authViewModelProvider);
     final isLoading = authState.status == AuthStatus.loading;
 
-    return Scaffold(
-      body: SafeArea(
+    return ScaffoldMessenger(
+      key: _scaffoldMessengerKey,
+      child: Scaffold(
+        body: SafeArea(
         child: Stack(
           children: [
             AbsorbPointer(
@@ -140,13 +163,24 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
 
                       const SizedBox(height: 30),
 
-                      // Username
+                      // Full Name
                       AppTextField(
                         controller: usernameController,
-                        label: "Username",
+                        label: "Full Name",
                         icon: Icons.person,
                         validator: (v) =>
-                            v == null || v.isEmpty ? "Username is required" : null,
+                            v == null || v.isEmpty ? "Full name is required" : null,
+                      ),
+
+                      const SizedBox(height: 20),
+
+                      // Email
+                      AppTextField(
+                        controller: emailController,
+                        label: "Email",
+                        icon: Icons.email,
+                        validator: (v) =>
+                            v == null || v.isEmpty ? "Email is required" : null,
                       ),
 
                       const SizedBox(height: 20),
@@ -219,6 +253,6 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
           ],
         ),
       ),
-    );
+    ));
   }
 }
