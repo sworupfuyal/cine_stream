@@ -14,13 +14,13 @@ class SignInScreen extends ConsumerStatefulWidget {
 
 class _SignInScreenState extends ConsumerState<SignInScreen> {
   final _formKey = GlobalKey<FormState>();
-  final usernameController = TextEditingController();
+  final emailController = TextEditingController();
   final passwordController = TextEditingController();
 
   Future<void> handleSignIn() async {
     if (_formKey.currentState!.validate()) {
       await ref.read(authViewModelProvider.notifier).login(
-            userName: usernameController.text,
+            email: emailController.text,
             password: passwordController.text,
           );
     }
@@ -44,7 +44,7 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
 
   @override
   void dispose() {
-    usernameController.dispose();
+    emailController.dispose();
     passwordController.dispose();
     super.dispose();
   }
@@ -97,12 +97,12 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
                 const SizedBox(height: 30),
 
                 AppTextField(
-                  controller: usernameController,
-                  label: "Username",
-                  icon: Icons.person,
+                  controller: emailController,
+                  label: "Email",
+                  icon: Icons.email,
                   validator: (v) {
                     if (v == null || v.isEmpty) {
-                      return "Username is required";
+                      return "Email is required";
                     }
                     return null;
                   },
