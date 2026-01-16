@@ -25,7 +25,7 @@ class AuthRemoteDatasource implements IAuthRemoteDatasource {
       final userData = response.data["data"] as Map<String, dynamic>;
       return AuthApiModel.fromJson(userData);
     }
-    return null;
+ 
   }
 
   @override
