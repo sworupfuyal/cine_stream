@@ -9,15 +9,19 @@ import 'package:equatable/equatable.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 class RegisterUsecasesParam extends Equatable {
-  final String userName;
+  final String fullName;
+  final String email;
   final String password;
+  final String confirmPassword;
 
   const RegisterUsecasesParam({
-    required this.userName,
+    required this.fullName,
+    required this.email,
     required this.password,
+    required this.confirmPassword,
   });
   @override
-  List<Object?> get props => [userName , password, ];
+  List<Object?> get props => [fullName, email, password, confirmPassword];
 }
 
 
@@ -37,8 +41,10 @@ class RegisterUsecase
   @override
   Future<Either<Failure, bool>> call(RegisterUsecasesParam params) {
     final entity= AuthEntity(
-      userName: params.userName,
+      fullName: params.fullName,
+      email: params.email,
       password: params.password,
+      confirmPassword: params.confirmPassword,
     );
 
     return _authRepository.registerUser(entity);

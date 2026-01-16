@@ -1,3 +1,4 @@
+
 import 'package:cine_stream/core/services/hive/hive_service.dart';
 import 'package:cine_stream/features/auth/data/datasources/auth_datasource.dart';
 import 'package:cine_stream/features/auth/data/models/auth_hive_model.dart';
@@ -9,29 +10,29 @@ final authLocalDatasourceProvider = Provider<AuthLocalDatasource>((ref) {
   return AuthLocalDatasource(hiveService: hiveService);
 });
 
-class AuthLocalDatasource implements IAuthDatasource {
+class AuthLocalDatasource implements IAuthLocalDatasource {
   final HiveService _hiveService;
 
   AuthLocalDatasource({required HiveService hiveService})
     : _hiveService = hiveService;
 
   @override
-  Future<AuthHiveModel?> loginUser(String userName, String password) async {
-    try{
-      final user = await _hiveService.loginUser(userName, password);
+  Future<AuthHiveModel?> loginUser(String email, String password) async {
+    try {
+      final user = await _hiveService.loginUser(email, password);
       return Future.value(user);
-    }catch(e){
+    } catch (e) {
       return Future.value(null);
     }
   }
 
   @override
-  Future<bool> registerUser(AuthHiveModel user) async {
-    try{
+  Future<AuthHiveModel> registerUser(AuthHiveModel user) async {
+    try {
       await _hiveService.registerUser(user);
-      return Future.value(true);
-    }catch(e){
-      return Future.value(false);
+      return user;
+    } catch (e) {
+      rethrow;
     }
   }
 }

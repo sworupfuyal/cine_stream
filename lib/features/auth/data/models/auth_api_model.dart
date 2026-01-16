@@ -29,18 +29,19 @@ class AuthApiModel {
       "role": role,
     };
   }
+  
 
   // from json 
-  factory AuthApiModel.fromJson(Map<String,dynamic> json){
-    return AuthApiModel(
-      id: json["_id"] as String,
-      fullName: json['fullName'] as String,
-      email: json["email"] as String,
-      password: json["password"] as String,
-      confirmPassword: json["password"] as String,
-      role: json["role"] as String
-    );
-  }
+ factory AuthApiModel.fromJson(Map<String, dynamic> json) {
+  return AuthApiModel(
+    id: json["_id"] as String?,  
+    fullName: json['fullname'] as String,  
+    email: json["email"] as String,
+    password: json["password"] as String?,  // Make nullable
+    confirmPassword: json["password"] as String?,  
+    role: json["role"] as String?,  
+  );
+}
   // From entity
   factory AuthApiModel.fromEntity(AuthEntity entity) {
     return AuthApiModel(

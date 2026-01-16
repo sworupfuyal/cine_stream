@@ -8,13 +8,13 @@ import 'package:equatable/equatable.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 class LoginUsecasesParams extends Equatable {
-  final String userName;
+  final String email;
   final String password;
 
-  const LoginUsecasesParams({required this.userName, required this.password});
+  const LoginUsecasesParams({required this.email, required this.password});
 
   @override
-  List<Object?> get props => [userName, password];
+  List<Object?> get props => [email, password];
 }
 
 // Provider for login usecase
@@ -31,6 +31,6 @@ class LoginUsecase
     : _authRepository = authRepository;
   @override
   Future<Either<Failure, AuthEntity>> call(params) {
-    return _authRepository.loginUser(params.userName, params.password);
+    return _authRepository.loginUser(params.email, params.password);
   }
 }
