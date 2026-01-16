@@ -44,9 +44,9 @@ class HiveService {
     return model;
   }
 
-  Future<AuthHiveModel?> loginUser(String userName, String password) async {
+  Future<AuthHiveModel?> loginUser(String email, String password) async {
     final users = _authBox.values.where(
-      (user) => user.userName == userName && user.password == password,
+      (user) => user.email == email && user.password == password,
     );
     if (users.isNotEmpty) {
       return users.first;
