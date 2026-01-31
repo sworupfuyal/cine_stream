@@ -129,7 +129,7 @@ class ApiClient {
     Options? options,
     ProgressCallback? onSendProgress,
   }) async {
-    return _dio.post(
+    return _dio.put(
       path,
       data: formData,
       options: options,

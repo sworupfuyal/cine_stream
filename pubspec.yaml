@@ -31,6 +31,7 @@ dependencies:
   flutter:
     sdk: flutter
 
+
   # state management
   flutter_riverpod: ^3.0.3
   
@@ -45,6 +46,7 @@ dependencies:
   path_provider: ^2.1.2
   path: ^1.9.0
 
+
   # Networking
   dio: ^5.4.1
   dio_smart_retry: ^7.0.1
@@ -58,6 +60,10 @@ dependencies:
   google_sign_in: ^7.2.0
   sign_in_with_apple: ^7.0.1
 
+  image_picker: ^1.0.7
+
+
+
   # utilities
   uuid: ^4.3.3
   json_annotation: ^4.8.1  
@@ -65,6 +71,8 @@ dependencies:
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.8
+  permission_handler: ^12.0.1
+  mocktail: ^1.0.4
 
 dev_dependencies:
   flutter_test:

@@ -1,14 +1,17 @@
 import 'dart:async';
+import 'package:cine_stream/core/services/storage/token_service.dart';
+import 'package:cine_stream/core/services/storage/user_session_service.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-class SplashScreen extends StatefulWidget {
+class SplashScreen extends ConsumerStatefulWidget {
   const SplashScreen({super.key});
 
   @override
-  State<SplashScreen> createState() => _SplashScreenState();
+  ConsumerState<SplashScreen> createState() => _SplashScreenState();
 }
 
-class _SplashScreenState extends State<SplashScreen>
+class _SplashScreenState extends ConsumerState<SplashScreen>
     with TickerProviderStateMixin {
 
   late AnimationController fadeController;
@@ -19,6 +22,8 @@ class _SplashScreenState extends State<SplashScreen>
   bool showDots = false;
   bool showTagline = false;
   bool showBottomLine = false;
+
+  Timer? _navigationTimer;
 
   @override
   void initState() {
@@ -45,24 +50,38 @@ class _SplashScreenState extends State<SplashScreen>
     fadeController.forward();
 
     Future.delayed(const Duration(milliseconds: 500), () {
-      setState(() => showDots = true);
+      if (mounted) setState(() => showDots = true);
     });
 
     Future.delayed(const Duration(milliseconds: 800), () {
-      setState(() => showTagline = true);
+      if (mounted) setState(() => showTagline = true);
     });
 
     Future.delayed(const Duration(milliseconds: 1200), () {
-      setState(() => showBottomLine = true);
+      if (mounted) setState(() => showBottomLine = true);
     });
 
-    Future.delayed(const Duration(seconds: 3), () {
-      Navigator.pushReplacementNamed(context, "/onboarding");
-    });
+    _navigationTimer = Timer(const Duration(seconds: 3), _handleNavigation);
+  }
+
+  Future<void> _handleNavigation() async {
+    final tokenService = ref.read(tokenServiceProvider);
+    final sessionService = ref.read(userSessionServiceProvider);
+
+    final token = await tokenService.getToken();
+final isLoggedIn = token != null && sessionService.isLoggedIn();
+
+    if (!mounted) return;
+
+    Navigator.pushReplacementNamed(
+      context,
+      isLoggedIn ? "/dashboard" : "/onboarding",
+    );
   }
 
   @override
   void dispose() {
+    _navigationTimer?.cancel();
     fadeController.dispose();
     glowController.dispose();
     super.dispose();
@@ -144,13 +163,13 @@ class _SplashScreenState extends State<SplashScreen>
                     colors: [
                       Colors.transparent,
                       Colors.blue,
-                      Colors.transparent
+                      Colors.transparent,
                     ],
                   ),
                 ),
               ),
             ),
-          )
+          ),
         ],
       ),
     );
@@ -167,7 +186,7 @@ class AnimatedDot extends StatefulWidget {
 
 class _AnimatedDotState extends State<AnimatedDot>
     with SingleTickerProviderStateMixin {
-  
+
   late AnimationController controller;
   late Animation<double> anim;
 
@@ -185,8 +204,14 @@ class _AnimatedDotState extends State<AnimatedDot>
     );
 
     Future.delayed(Duration(milliseconds: widget.delay), () {
-      controller.repeat(reverse: true);
+      if (mounted) controller.repeat(reverse: true);
     });
+  }
+
+  @override
+  void dispose() {
+    controller.dispose();
+    super.dispose();
   }
 
   @override
