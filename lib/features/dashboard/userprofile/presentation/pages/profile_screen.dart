@@ -20,6 +20,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   final ImagePicker _picker = ImagePicker();
 
   late TextEditingController _nameController;
+  late TextEditingController _emailController;
   late TextEditingController _phoneController;
   late TextEditingController _locationController;
 
@@ -31,6 +32,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   void initState() {
     super.initState();
     _nameController = TextEditingController();
+    _emailController = TextEditingController();
     _phoneController = TextEditingController();
     _locationController = TextEditingController();
 
@@ -42,6 +44,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   @override
   void dispose() {
     _nameController.dispose();
+    _emailController.dispose();
     _phoneController.dispose();
     _locationController.dispose();
     super.dispose();
@@ -181,6 +184,15 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   Future<void> _saveProfile() async {
     if (_isSaving) return;
 
+    // Validate email format if provided
+    final emailText = _emailController.text.trim();
+    if (emailText.isNotEmpty && !_isValidEmail(emailText)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Please enter a valid email address")),
+      );
+      return;
+    }
+
     setState(() => _isSaving = true);
 
     try {
@@ -189,6 +201,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               fullName: _nameController.text.trim().isNotEmpty
                   ? _nameController.text.trim()
                   : null,
+              email: emailText.isNotEmpty ? emailText : null,
               phoneNumber: _phoneController.text.trim().isNotEmpty
                   ? _phoneController.text.trim()
                   : null,
@@ -218,6 +231,13 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     }
   }
 
+  bool _isValidEmail(String email) {
+    final emailRegex = RegExp(
+      r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$',
+    );
+    return emailRegex.hasMatch(email);
+  }
+
   /* ---------------- UI ---------------- */
 
   @override
@@ -234,6 +254,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     if (profile == null) return const SizedBox.shrink();
 
     _nameController.text = profile.fullName ?? '';
+    _emailController.text = profile.email ?? '';
     _phoneController.text = profile.phoneNumber ?? '';
     _locationController.text = profile.location ?? '';
 
@@ -293,9 +314,16 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                     controller: _nameController,
                   ),
                   _editableField(
+                    label: "Email",
+                    icon: Icons.email_outlined,
+                    controller: _emailController,
+                    keyboardType: TextInputType.emailAddress,
+                  ),
+                  _editableField(
                     label: "Phone",
                     icon: Icons.phone_outlined,
                     controller: _phoneController,
+                    keyboardType: TextInputType.phone,
                   ),
                   _editableField(
                     label: "Location",
@@ -316,12 +344,14 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     required String label,
     required IconData icon,
     required TextEditingController controller,
+    TextInputType? keyboardType,
   }) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 16),
       child: TextField(
         controller: controller,
         onChanged: (_) => _onFieldChanged(),
+        keyboardType: keyboardType,
         decoration: InputDecoration(
           prefixIcon: Icon(icon),
           labelText: label,
