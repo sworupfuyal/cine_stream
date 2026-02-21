@@ -73,19 +73,7 @@ class AuthRepository implements IAuthRepository {
     }
   }
 
-  // @override
-  // Future<Either<Failure, bool>> registerUser(AuthEntity user) async {
-  //   try{
-  //     final model = AuthHiveModel.fromEntity(user);
-  //     final result = await _authDatasource.registerUser(model);
-  //     if(result.success){
-  //       return Right(true);
-  //     }
-  //     return Left(LocalDatabaseFailure(message: "Failed to register user"));
-  //   }catch(e){
-  //     return Left(LocalDatabaseFailure(message: e.toString()));
-  //   }
-  // }
+
 
   @override
   Future<Either<Failure, bool>> registerUser(AuthEntity user) async {

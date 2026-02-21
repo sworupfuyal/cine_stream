@@ -1,3 +1,4 @@
+import 'package:cine_stream/features/auth/presentation/pages/forgot_password_screen.dart';
 import 'package:cine_stream/features/auth/presentation/state/auth_state.dart';
 import 'package:cine_stream/features/auth/presentation/view_model/auth_view_model.dart';
 import 'package:cine_stream/widgets/app_button.dart';
@@ -52,30 +53,20 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-
-    // Watch auth state
     final authState = ref.watch(authViewModelProvider);
 
-    // Listen for state changes
-    ref.listen<AuthState>(
-      authViewModelProvider,
-      (previous, next) {
-        if (next.status == AuthStatus.error) {
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            _showSnackBar(
-              next.errorMessage ?? 'Login Failed',
-              Colors.red,
-            );
-          });
-        } else if (next.status == AuthStatus.authenticated) {
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            _navigateToDashboard();
-          });
-        }
-      },
-    );
+    ref.listen<AuthState>(authViewModelProvider, (previous, next) {
+      if (next.status == AuthStatus.error) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          _showSnackBar(next.errorMessage ?? 'Login Failed', Colors.red);
+        });
+      } else if (next.status == AuthStatus.authenticated) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          _navigateToDashboard();
+        });
+      }
+    });
 
-    // Get loading state from auth state
     final isLoading = authState.status == AuthStatus.loading;
 
     return Scaffold(
@@ -89,10 +80,7 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
               children: [
                 const SizedBox(height: 40),
 
-                Text(
-                  "Welcome Back",
-                  style: theme.textTheme.headlineLarge,
-                ),
+                Text("Welcome Back", style: theme.textTheme.headlineLarge),
 
                 const SizedBox(height: 30),
 
@@ -101,9 +89,7 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
                   label: "Email",
                   icon: Icons.email,
                   validator: (v) {
-                    if (v == null || v.isEmpty) {
-                      return "Email is required";
-                    }
+                    if (v == null || v.isEmpty) return "Email is required";
                     return null;
                   },
                 ),
@@ -116,9 +102,7 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
                   icon: Icons.lock,
                   isPassword: true,
                   validator: (v) {
-                    if (v == null || v.isEmpty) {
-                      return "Password is required";
-                    }
+                    if (v == null || v.isEmpty) return "Password is required";
                     return null;
                   },
                 ),
@@ -129,8 +113,13 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
                   alignment: Alignment.centerRight,
                   child: TextButton(
                     onPressed: () {
-                      // Navigate to forgot password screen
-                      // Navigator.pushNamed(context, "/forgot-password");
+                      // ✅ Navigate to forgot password screen
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const ForgotPasswordScreen(),
+                        ),
+                      );
                     },
                     child: Text(
                       "Forgot Password?",
@@ -146,7 +135,7 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
                 AppButton(
                   text: "Sign In",
                   isLoading: isLoading,
-                  onPressed:  handleSignIn,
+                  onPressed: handleSignIn,
                 ),
 
                 const SizedBox(height: 25),
