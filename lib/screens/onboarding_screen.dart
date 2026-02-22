@@ -64,7 +64,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                       subtitleSize,
                       "Personalized Recommendations",
                       "Enjoy content tailored to your taste and viewing habits.",
-                      "assets/images/moviewall1.png",
+                      "assets/images/moviewall3.png",
                     ),
                     _onboardingPage(
                       imageHeight,
@@ -72,7 +72,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                       subtitleSize,
                       "Stream Anytime, Anywhere",
                       "Watch your favorite movies without limits.",
-                      "assets/images/moviewall1.png",
+                      "assets/images/moviewall4.png",
                     ),
                   ],
                 ),

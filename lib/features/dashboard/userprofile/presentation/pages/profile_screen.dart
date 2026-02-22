@@ -1,13 +1,18 @@
+import 'dart:async';
 import 'dart:io';
-
-import 'package:cine_stream/features/dashboard/userprofile/domain/usecases/update_user_profile_usecase.dart';
-import 'package:cine_stream/features/dashboard/userprofile/presentation/state/user_profile_state.dart';
-import 'package:cine_stream/features/dashboard/userprofile/presentation/view_model/user_profile_view_model.dart';
-import 'package:cine_stream/themes/theme.dart';
+import 'package:cine_stream/core/api/api_endpoints.dart';
+import 'package:cine_stream/core/services/storage/token_service.dart';
+import 'package:cine_stream/features/auth/presentation/pages/signin_screen.dart';
+import 'package:cine_stream/features/dashboard/userprofile/presentation/pages/settings_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:proximity_sensor/proximity_sensor.dart';
+
+import '../../domain/usecases/update_user_profile_usecase.dart';
+import '../state/user_profile_state.dart';
+import '../view_model/user_profile_view_model.dart';
 
 class ProfileScreen extends ConsumerStatefulWidget {
   const ProfileScreen({super.key});
@@ -27,6 +32,13 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   File? _selectedImage;
   bool _hasChanges = false;
   bool _isSaving = false;
+  bool _controllersInitialized = false;
+
+  // ── Proximity logout fields
+  StreamSubscription<int>? _proximitySub;
+  bool _isNear = false;
+  int _proximityValue = 0;
+  int _lastLogoutTime = 0;
 
   @override
   void initState() {
@@ -39,10 +51,23 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(userProfileViewModelProvider.notifier).getUserProfile();
     });
+
+    _proximitySub = ProximitySensor.events.listen((int event) {
+      _proximityValue = event;
+      bool near = event < 4;
+      _isNear = near;
+
+      int now = DateTime.now().millisecondsSinceEpoch;
+      if (near && now - _lastLogoutTime > 1000) {
+        _lastLogoutTime = now;
+        _logout();
+      }
+    });
   }
 
   @override
   void dispose() {
+    _proximitySub?.cancel();
     _nameController.dispose();
     _emailController.dispose();
     _phoneController.dispose();
@@ -50,67 +75,69 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     super.dispose();
   }
 
+  void _populateControllers(dynamic profile) {
+    if (_controllersInitialized) return;
+    _controllersInitialized = true;
+    _nameController.text = profile.fullName ?? '';
+    _emailController.text = profile.email ?? '';
+    _phoneController.text = profile.phoneNumber ?? '';
+    _locationController.text = profile.location ?? '';
+  }
+
   void _onFieldChanged() {
-    if (!_hasChanges) {
-      setState(() => _hasChanges = true);
-    }
+    if (!_hasChanges) setState(() => _hasChanges = true);
   }
 
-  /* ---------------- PERMISSIONS ---------------- */
-
-  Future<bool> _requestPermission(Permission permission) async {
-    final status = await permission.status;
-    if (status.isGranted) return true;
-
-    if (status.isDenied) {
-      final result = await permission.request();
-      return result.isGranted;
-    }
-
-    if (status.isPermanentlyDenied) {
-      _showPermissionDialog();
-    }
-    return false;
-  }
-
-  void _showPermissionDialog() {
-    showDialog(
+  Future<void> _logout() async {
+    final confirmed = await showDialog<bool>(
       context: context,
       builder: (_) => AlertDialog(
-        backgroundColor: AppColors.card,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Text("Permission Required"),
-        content: const Text(
-          "Please enable permission from settings to continue.",
-        ),
+        title: const Text('Logout'),
+        content: const Text('Are you sure you want to logout?'),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text("Cancel"),
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
           ),
           TextButton(
-            onPressed: () {
-              Navigator.pop(context);
-              openAppSettings();
-            },
-            child: const Text("Open Settings"),
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text(
+              'Logout',
+              style: TextStyle(color: Colors.redAccent),
+            ),
           ),
         ],
       ),
     );
+
+    if (confirmed != true || !mounted) return;
+
+    await ref.read(tokenServiceProvider).removeToken();
+
+    if (!mounted) return;
+
+    Navigator.of(context).pushAndRemoveUntil(
+      MaterialPageRoute(builder: (_) => const SignInScreen()),
+      (route) => false,
+    );
   }
 
-  /* ---------------- IMAGE PICK ---------------- */
+  Future<bool> _requestPermission(Permission permission) async {
+    final status = await permission.status;
+    if (status.isGranted) return true;
+    if (status.isDenied) {
+      final result = await permission.request();
+      return result.isGranted;
+    }
+    if (status.isPermanentlyDenied) openAppSettings();
+    return false;
+  }
 
   Future<void> _pickFromCamera() async {
     final granted = await _requestPermission(Permission.camera);
     if (!granted) return;
-
-    final image = await _picker.pickImage(
-      source: ImageSource.camera,
-      imageQuality: 80,
-    );
-
+    final image =
+        await _picker.pickImage(source: ImageSource.camera, imageQuality: 80);
     if (image != null) {
       setState(() {
         _selectedImage = File(image.path);
@@ -120,11 +147,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   }
 
   Future<void> _pickFromGallery() async {
-    final image = await _picker.pickImage(
-      source: ImageSource.gallery,
-      imageQuality: 80,
-    );
-
+    final image =
+        await _picker.pickImage(source: ImageSource.gallery, imageQuality: 80);
     if (image != null) {
       setState(() {
         _selectedImage = File(image.path);
@@ -136,63 +160,39 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   void _showImagePickerSheet() {
     showModalBottomSheet(
       context: context,
-      backgroundColor: AppColors.card,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
-      builder: (_) => Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            _pickerTile(
-              icon: Icons.camera_alt,
-              label: "Open Camera",
-              onTap: () {
-                Navigator.pop(context);
-                _pickFromCamera();
-              },
-            ),
-            _pickerTile(
-              icon: Icons.photo_library,
-              label: "Open Gallery",
-              onTap: () {
-                Navigator.pop(context);
-                _pickFromGallery();
-              },
-            ),
-          ],
+      builder: (_) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _sheetTile(Icons.camera_alt, "Open Camera", _pickFromCamera),
+              _sheetTile(
+                  Icons.photo_library, "Open Gallery", _pickFromGallery),
+            ],
+          ),
         ),
       ),
     );
   }
 
-  Widget _pickerTile({
-    required IconData icon,
-    required String label,
-    required VoidCallback onTap,
-  }) {
+  Widget _sheetTile(IconData icon, String label, VoidCallback onTap) {
+    final theme = Theme.of(context);
     return ListTile(
-      leading: Icon(icon, color: AppColors.primary),
+      leading: Icon(icon, color: theme.colorScheme.primary),
       title: Text(label),
-      onTap: onTap,
+      onTap: () {
+        Navigator.pop(context);
+        onTap();
+      },
     );
   }
 
-  /* ---------------- SAVE ---------------- */
-
   Future<void> _saveProfile() async {
     if (_isSaving) return;
-
-    // Validate email format if provided
-    final emailText = _emailController.text.trim();
-    if (emailText.isNotEmpty && !_isValidEmail(emailText)) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Please enter a valid email address")),
-      );
-      return;
-    }
-
     setState(() => _isSaving = true);
 
     try {
@@ -201,7 +201,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               fullName: _nameController.text.trim().isNotEmpty
                   ? _nameController.text.trim()
                   : null,
-              email: emailText.isNotEmpty ? emailText : null,
+              email: _emailController.text.trim().isNotEmpty
+                  ? _emailController.text.trim()
+                  : null,
               phoneNumber: _phoneController.text.trim().isNotEmpty
                   ? _phoneController.text.trim()
                   : null,
@@ -218,31 +220,29 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         _hasChanges = false;
         _selectedImage = null;
         _isSaving = false;
+        _controllersInitialized = false;
       });
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Profile updated successfully")),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Profile updated successfully")),
+        );
+      }
     } catch (e) {
       setState(() => _isSaving = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Update failed: $e")),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Update failed: $e")),
+        );
+      }
     }
   }
-
-  bool _isValidEmail(String email) {
-    final emailRegex = RegExp(
-      r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$',
-    );
-    return emailRegex.hasMatch(email);
-  }
-
-  /* ---------------- UI ---------------- */
 
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(userProfileViewModelProvider);
+    final theme = Theme.of(context);
+    final colors = theme.colorScheme;
 
     if (state.status == UserProfileStatus.loading && state.profile == null) {
       return const Scaffold(
@@ -253,112 +253,243 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     final profile = state.profile;
     if (profile == null) return const SizedBox.shrink();
 
-    _nameController.text = profile.fullName ?? '';
-    _emailController.text = profile.email ?? '';
-    _phoneController.text = profile.phoneNumber ?? '';
-    _locationController.text = profile.location ?? '';
+    _populateControllers(profile);
 
     return Scaffold(
-      backgroundColor: AppColors.background,
       floatingActionButton: _hasChanges
           ? FloatingActionButton.extended(
+              backgroundColor: colors.primary,
+              foregroundColor: colors.onPrimary,
               onPressed: _isSaving ? null : _saveProfile,
               icon: _isSaving
-                  ? const CircularProgressIndicator(strokeWidth: 2)
+                  ? const SizedBox(
+                      height: 18,
+                      width: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
                   : const Icon(Icons.save),
               label: Text(_isSaving ? "Saving..." : "Save Changes"),
             )
           : null,
       floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
-      body: CustomScrollView(
-        slivers: [
-          SliverAppBar(
-            expandedHeight: 280,
-            pinned: true,
-            flexibleSpace: FlexibleSpaceBar(
-              background: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const SizedBox(height: 60),
-                  GestureDetector(
-                    onTap: _showImagePickerSheet,
-                    child: CircleAvatar(
-                      radius: 60,
-                      backgroundImage: _selectedImage != null
-                          ? FileImage(_selectedImage!)
-                          : (profile.profileImage != null &&
-                                  profile.profileImage!.isNotEmpty)
-                              ? NetworkImage(
-                                  "http://10.0.2.2:6050${profile.profileImage}",
-                                )
-                              : const AssetImage(
-                                      "assets/images/moviewall2.png")
-                                  as ImageProvider,
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              colors.primary.withOpacity(0.35),
+              colors.surface,
+            ],
+          ),
+        ),
+        child: SafeArea(
+          child: CustomScrollView(
+            slivers: [
+              SliverToBoxAdapter(
+                child: Column(
+                  children: [
+                    const SizedBox(height: 20),
+
+                    // ── Header Row
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      child: Row(
+                        children: [
+                          Text(
+                            "Profile",
+                            style: theme.textTheme.headlineSmall?.copyWith(
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          const Spacer(),
+                          // ── Settings icon 👇
+                          IconButton(
+                            onPressed: () => Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (_) => const SettingsScreen()),
+                            ),
+                            icon: const Icon(Icons.settings_outlined),
+                            tooltip: 'Settings',
+                          ),
+                          // ── Logout button
+                          TextButton.icon(
+                            onPressed: _logout,
+                            icon: const Icon(Icons.logout,
+                                color: Colors.redAccent, size: 18),
+                            label: const Text(
+                              'Logout',
+                              style: TextStyle(
+                                  color: Colors.redAccent, fontSize: 14),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 16),
-                  Text(profile.fullName ?? "No Name"),
-                  Text(profile.email ?? "No Email"),
-                ],
+
+                    const SizedBox(height: 24),
+
+                    // ── Avatar Card
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      child: Container(
+                        padding: const EdgeInsets.all(20),
+                        decoration: BoxDecoration(
+                          color: colors.surface.withOpacity(0.8),
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        child: Column(
+                          children: [
+                            GestureDetector(
+                              onTap: _showImagePickerSheet,
+                              child: Stack(
+                                children: [
+                                  CircleAvatar(
+                                    radius: 60,
+                                    backgroundColor: colors.primary,
+                                    backgroundImage: _selectedImage != null
+                                        ? FileImage(_selectedImage!)
+                                        : (profile.profileImage != null &&
+                                                profile.profileImage!.isNotEmpty)
+                                            ? NetworkImage(
+                                                "${ApiEndpoints.baseUrl}${profile.profileImage}",
+                                              )
+                                            : null,
+                                    child: _selectedImage == null &&
+                                            (profile.profileImage == null ||
+                                                profile.profileImage!.isEmpty)
+                                        ? Icon(Icons.person,
+                                            size: 50, color: colors.onPrimary)
+                                        : null,
+                                  ),
+                                  Positioned(
+                                    bottom: 0,
+                                    right: 0,
+                                    child: Container(
+                                      padding: const EdgeInsets.all(6),
+                                      decoration: BoxDecoration(
+                                        color: colors.primary,
+                                        shape: BoxShape.circle,
+                                        border: Border.all(
+                                            color: colors.surface, width: 2),
+                                      ),
+                                      child: Icon(Icons.camera_alt,
+                                          size: 16, color: colors.onPrimary),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(height: 16),
+                            Text(
+                              profile.fullName ?? "No Name",
+                              style: theme.textTheme.titleMedium
+                                  ?.copyWith(fontWeight: FontWeight.w600),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              profile.email ?? "No Email",
+                              style: theme.textTheme.bodySmall?.copyWith(
+                                  color:
+                                      colors.onSurface.withOpacity(0.6)),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+
+                    const SizedBox(height: 24),
+
+                    // ── Editable Fields Card
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      child: Container(
+                        padding: const EdgeInsets.all(20),
+                        decoration: BoxDecoration(
+                          color: colors.surface.withOpacity(0.8),
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        child: Column(
+                          children: [
+                            _modernField("Name", Icons.person_outline,
+                                _nameController),
+                            const SizedBox(height: 16),
+                            _modernField(
+                                "Email", Icons.email_outlined, _emailController,
+                                keyboardType: TextInputType.emailAddress),
+                            const SizedBox(height: 16),
+                            _modernField(
+                                "Phone", Icons.phone_outlined, _phoneController,
+                                keyboardType: TextInputType.phone),
+                            const SizedBox(height: 16),
+                            _modernField("Location",
+                                Icons.location_on_outlined, _locationController),
+                          ],
+                        ),
+                      ),
+                    ),
+
+                    const SizedBox(height: 24),
+
+                    // ── Logout Button
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      child: SizedBox(
+                        width: double.infinity,
+                        child: OutlinedButton.icon(
+                          onPressed: _logout,
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: Colors.redAccent,
+                            side: const BorderSide(
+                                color: Colors.redAccent, width: 1),
+                            padding:
+                                const EdgeInsets.symmetric(vertical: 14),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                          icon: const Icon(Icons.logout, size: 18),
+                          label: const Text('Logout',
+                              style: TextStyle(
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w600)),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 120),
+                  ],
+                ),
               ),
-            ),
+            ],
           ),
-          SliverPadding(
-            padding: const EdgeInsets.all(20),
-            sliver: SliverList(
-              delegate: SliverChildListDelegate(
-                [
-                  _editableField(
-                    label: "Name",
-                    icon: Icons.person_outline,
-                    controller: _nameController,
-                  ),
-                  _editableField(
-                    label: "Email",
-                    icon: Icons.email_outlined,
-                    controller: _emailController,
-                    keyboardType: TextInputType.emailAddress,
-                  ),
-                  _editableField(
-                    label: "Phone",
-                    icon: Icons.phone_outlined,
-                    controller: _phoneController,
-                    keyboardType: TextInputType.phone,
-                  ),
-                  _editableField(
-                    label: "Location",
-                    icon: Icons.location_on_outlined,
-                    controller: _locationController,
-                  ),
-                  const SizedBox(height: 120),
-                ],
-              ),
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }
 
-  Widget _editableField({
-    required String label,
-    required IconData icon,
-    required TextEditingController controller,
-    TextInputType? keyboardType,
-  }) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 16),
-      child: TextField(
-        controller: controller,
-        onChanged: (_) => _onFieldChanged(),
-        keyboardType: keyboardType,
-        decoration: InputDecoration(
-          prefixIcon: Icon(icon),
-          labelText: label,
-          filled: true,
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
+  Widget _modernField(
+      String label, IconData icon, TextEditingController controller,
+      {TextInputType? keyboardType}) {
+    final theme = Theme.of(context);
+    final colors = theme.colorScheme;
+
+    return TextField(
+      controller: controller,
+      onChanged: (_) => _onFieldChanged(),
+      keyboardType: keyboardType,
+      decoration: InputDecoration(
+        prefixIcon: Icon(icon, color: colors.primary),
+        labelText: label,
+        filled: true,
+        fillColor: colors.surface.withOpacity(0.6),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide.none,
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: colors.primary, width: 1.5),
         ),
       ),
     );

@@ -31,6 +31,11 @@ dependencies:
   flutter:
     sdk: flutter
 
+  # Sensor packages
+  sensors_plus: ^6.1.1
+  proximity_sensor: ^1.0.5
+  light_sensor: ^3.0.1   
+
 
   # state management
   flutter_riverpod: ^3.0.3
@@ -73,6 +78,9 @@ dependencies:
   cupertino_icons: ^1.0.8
   permission_handler: ^12.0.1
   mocktail: ^1.0.4
+  flutter_launcher_icons: ^0.14.4
+  video_player: ^2.11.0
+  chewie: ^1.13.0
 
 dev_dependencies:
   flutter_test:
@@ -138,3 +146,15 @@ flutter:
   #
   # For details regarding fonts from package dependencies,
   # see https://flutter.dev/to/font-from-package
+  
+flutter_launcher_icons:
+  android: true
+  ios: true
+
+  image_path: "assets/icons/icon.png"
+
+  adaptive_icon_background: "#000000" # or use background image
+  adaptive_icon_foreground: "assets/icons/icon.png"
+
+  min_sdk_android: 21
+  remove_alpha_ios: true

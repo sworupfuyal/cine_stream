@@ -18,17 +18,20 @@ class AppTextField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colors = theme.colorScheme;
+
     return TextFormField(
       controller: controller,
       obscureText: isPassword,
-      style: const TextStyle(color: Colors.white),
+      style: theme.textTheme.bodyLarge,
       validator: validator,
       decoration: InputDecoration(
         labelText: label,
-        labelStyle: const TextStyle(color: Colors.white70),
-        prefixIcon: Icon(icon, color: Colors.white70),
+        labelStyle: theme.textTheme.bodyMedium,
+        prefixIcon: Icon(icon, color: colors.onSurface.withOpacity(0.7)),
         filled: true,
-        fillColor: Colors.white12,
+        fillColor: colors.onSurface.withOpacity(0.08),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide.none,

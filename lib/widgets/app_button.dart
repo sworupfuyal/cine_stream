@@ -14,24 +14,28 @@ class AppButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colors = theme.colorScheme;
+
     return SizedBox(
       width: double.infinity,
       height: 50,
       child: ElevatedButton(
         style: ElevatedButton.styleFrom(
-          backgroundColor: Colors.blueAccent,
+          backgroundColor: colors.primary,
+          foregroundColor: colors.onPrimary,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
           ),
         ),
         onPressed: isLoading ? null : onPressed,
         child: isLoading
-            ? const CircularProgressIndicator(color: Colors.white)
+            ? CircularProgressIndicator(color: colors.onPrimary)
             : Text(
                 text,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 16,
+                style: theme.textTheme.bodyLarge?.copyWith(
+                  color: colors.onPrimary,
+                  fontWeight: FontWeight.w600,
                 ),
               ),
       ),

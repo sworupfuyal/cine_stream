@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'package:cine_stream/core/services/storage/token_service.dart';
-import 'package:cine_stream/core/services/storage/user_session_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -64,21 +63,19 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
     _navigationTimer = Timer(const Duration(seconds: 3), _handleNavigation);
   }
 
-  Future<void> _handleNavigation() async {
-    final tokenService = ref.read(tokenServiceProvider);
-    final sessionService = ref.read(userSessionServiceProvider);
+Future<void> _handleNavigation() async {
+  final tokenService = ref.read(tokenServiceProvider);
 
-    final token = await tokenService.getToken();
-final isLoggedIn = token != null && sessionService.isLoggedIn();
+  final token = await tokenService.getToken(); // ✅ single source of truth
+  final isLoggedIn = token != null && token.isNotEmpty;
 
-    if (!mounted) return;
+  if (!mounted) return;
 
-    Navigator.pushReplacementNamed(
-      context,
-      isLoggedIn ? "/dashboard" : "/onboarding",
-    );
-  }
-
+  Navigator.pushReplacementNamed(
+    context,
+    isLoggedIn ? "/dashboard" : "/onboarding",
+  );
+}
   @override
   void dispose() {
     _navigationTimer?.cancel();

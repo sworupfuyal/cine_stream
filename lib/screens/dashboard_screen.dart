@@ -1,7 +1,7 @@
+import 'package:cine_stream/features/dashboard/home/presentation/pages/home_page.dart';
+import 'package:cine_stream/features/dashboard/mylist/presentation/pages/my_list_page.dart';
+import 'package:cine_stream/features/dashboard/search/presentation/page/search_page.dart';
 import 'package:cine_stream/features/dashboard/userprofile/presentation/pages/profile_screen.dart' show ProfileScreen;
-import 'package:cine_stream/screens/bottom_navigation_screens/favourite_screen.dart';
-import 'package:cine_stream/screens/bottom_navigation_screens/home_screen.dart';
-import 'package:cine_stream/screens/bottom_navigation_screens/search_screen.dart';
 import 'package:flutter/material.dart';
 class BottomNavigationScreen extends StatefulWidget {
   const BottomNavigationScreen({super.key});
@@ -15,9 +15,9 @@ class _BottomNavigationScreenState extends State<BottomNavigationScreen> {
   int _selectedIndex = 0;
 
   final List<Widget> _screens = const [
-    HomeScreen(),
-    SearchScreen(),
-    FavouriteScreen(),
+    HomePage(),
+    SearchPage(),
+    MyListPage(),
     ProfileScreen(),
   ];
 
