@@ -8,7 +8,7 @@ class ApiEndpoints {
   // Configuration
   // ─────────────────────────────────────────────────────────────
   static const bool isPhysicalDevice = true; // set true for real device
-  static const String _ipAddress = '192.168.137.1'; // your local machine IP
+  static const String _ipAddress = '192.168.176.1'; // your local machine IP
   static const int _port = 6050;
 
   // ─────────────────────────────────────────────────────────────
@@ -55,6 +55,9 @@ class ApiEndpoints {
   static String get userLists => "$baseUrl/api/user/lists";
   static String get userListCounts => "$baseUrl/api/user/lists/counts";
   static String get userListStatus => "$baseUrl/api/user/lists/status";
+
+  static String movieReviews(String movieId) => '/api/reviews/$movieId';
+
 
    // ── Password Reset ───────────────────────────────────────────────────────────
   // POST /api/auth/request-password-reset  → { email }

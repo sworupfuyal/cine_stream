@@ -36,7 +36,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 
   // ── Proximity logout fields
   StreamSubscription<int>? _proximitySub;
+    // ignore: unused_field
   bool _isNear = false;
+  // ignore: unused_field
   int _proximityValue = 0;
   int _lastLogoutTime = 0;
 

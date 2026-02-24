@@ -103,7 +103,7 @@ class UserListRemoteDataSource {
         throw Exception(data['message'] ?? 'Failed to add to list');
       }
     } on DioException catch (e) {
-      // ✅ 409 = already in list — treat as success (idempotent)
+      // 409 = already in list — treat as success (idempotent)
       if (e.response?.statusCode == 409) {
         debugPrint('ℹ️ Movie already in list — treating as success');
         return;
@@ -134,6 +134,8 @@ class UserListRemoteDataSource {
     return UserListCountsModel.fromJson(data['data'] as Map<String, dynamic>);
   }
 
+  /// The API returns data as a map keyed by movieId:
+  /// { "data": { "<movieId>": { "isFavorite": true, "isWatchLater": false } } }
   Future<List<MovieListStatusModel>> getListStatus(
       List<String> movieIds) async {
     final response = await _apiClient.post(
@@ -144,8 +146,16 @@ class UserListRemoteDataSource {
     if (data['success'] != true) {
       throw Exception(data['message'] ?? 'Failed to fetch status');
     }
-    return (data['data'] as List)
-        .map((e) => MovieListStatusModel.fromJson(e as Map<String, dynamic>))
-        .toList();
+
+    final dataMap = Map<String, dynamic>.from(data['data'] as Map);
+
+    return dataMap.entries.map((entry) {
+      final status = Map<String, dynamic>.from(entry.value as Map);
+      return MovieListStatusModel(
+        movieId: entry.key,
+        isFavorite: status['isFavorite'] as bool? ?? false,
+        isWatchLater: status['isWatchLater'] as bool? ?? false,
+      );
+    }).toList();
   }
 }

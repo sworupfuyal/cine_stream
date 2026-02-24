@@ -88,6 +88,7 @@ class UserListCountsModel {
           (json['watchlater'] as num?)?.toInt() ?? 0,
     );
   }
+  
 
   UserListCountsEntity toEntity() =>
       UserListCountsEntity(favorites: favorites, watchlater: watchlater);
