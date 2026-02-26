@@ -19,38 +19,46 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+
     final size = MediaQuery.of(context).size;
     final isTablet = size.width > 600;
 
     final double verticalPadding = isTablet ? 60 : 40;
-    final double titleSize = isTablet ? 34 : 26;
-    final double subtitleSize = isTablet ? 20 : 14;
-    final double imageHeight = isTablet ? size.height * 0.45 : size.height * 0.35;
+    final double titleSize = isTablet ? 34.0 : 26.0;
+    final double subtitleSize = isTablet ? 20.0 : 14.0;
+    final double imageHeight =
+        isTablet ? size.height * 0.45 : size.height * 0.35;
 
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: colorScheme.surface,
       body: SafeArea(
         child: Padding(
           padding: EdgeInsets.symmetric(horizontal: isTablet ? 60 : 24),
           child: Column(
             children: [
+              // ── Skip button ─────────────────────────────────────────────
               Align(
                 alignment: Alignment.topRight,
                 child: TextButton(
                   onPressed: navigateToSignup,
-                  child: const Text(
+                  child: Text(
                     "Skip",
-                    style: TextStyle(color: Colors.white70),
+                    style: TextStyle(color: colorScheme.onSurface.withOpacity(0.7)),
                   ),
                 ),
               ),
 
+              // ── Pages ───────────────────────────────────────────────────
               Expanded(
                 child: PageView(
                   controller: _controller,
-                  onPageChanged: (index) => setState(() => currentPage = index),
+                  onPageChanged: (index) =>
+                      setState(() => currentPage = index),
                   children: [
                     _onboardingPage(
+                      context,
                       imageHeight,
                       titleSize,
                       subtitleSize,
@@ -59,6 +67,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                       "assets/images/moviewall1.png",
                     ),
                     _onboardingPage(
+                      context,
                       imageHeight,
                       titleSize,
                       subtitleSize,
@@ -67,6 +76,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                       "assets/images/moviewall3.png",
                     ),
                     _onboardingPage(
+                      context,
                       imageHeight,
                       titleSize,
                       subtitleSize,
@@ -80,17 +90,20 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
               const SizedBox(height: 20),
 
+              // ── Page indicator dots ──────────────────────────────────────
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: List.generate(3, (index) {
-                  bool active = index == currentPage;
+                  final bool active = index == currentPage;
                   return AnimatedContainer(
                     duration: const Duration(milliseconds: 300),
                     margin: const EdgeInsets.symmetric(horizontal: 4),
                     width: active ? 18 : 8,
                     height: 8,
                     decoration: BoxDecoration(
-                      color: active ? Colors.redAccent : Colors.grey.shade700,
+                      color: active
+                          ? colorScheme.secondary
+                          : colorScheme.onSurface.withOpacity(0.3),
                       borderRadius: BorderRadius.circular(10),
                     ),
                   );
@@ -99,14 +112,16 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
               SizedBox(height: verticalPadding),
 
+              // ── CTA button ───────────────────────────────────────────────
               AppButton(
                 text: currentPage == 2 ? "Get Started" : "Next",
                 isLoading: isLoading,
                 onPressed: () {
                   if (currentPage < 2) {
                     _controller.nextPage(
-                        duration: const Duration(milliseconds: 300),
-                        curve: Curves.easeInOut);
+                      duration: const Duration(milliseconds: 300),
+                      curve: Curves.easeInOut,
+                    );
                   } else {
                     navigateToSignup();
                   }
@@ -122,6 +137,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   }
 
   Widget _onboardingPage(
+    BuildContext context,
     double imageH,
     double titleSize,
     double subtitleSize,
@@ -129,6 +145,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     String subtitle,
     String imagePath,
   ) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
@@ -152,7 +170,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           style: TextStyle(
             fontSize: titleSize,
             fontWeight: FontWeight.bold,
-            color: Colors.white,
+            color: colorScheme.onSurface,
           ),
         ),
 
@@ -164,7 +182,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           style: TextStyle(
             fontSize: subtitleSize,
             height: 1.4,
-            color: Colors.white70,
+            color: colorScheme.onSurface.withOpacity(0.7),
           ),
         ),
       ],

@@ -63,19 +63,20 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
     _navigationTimer = Timer(const Duration(seconds: 3), _handleNavigation);
   }
 
-Future<void> _handleNavigation() async {
-  final tokenService = ref.read(tokenServiceProvider);
+  Future<void> _handleNavigation() async {
+    final tokenService = ref.read(tokenServiceProvider);
 
-  final token = await tokenService.getToken(); // ✅ single source of truth
-  final isLoggedIn = token != null && token.isNotEmpty;
+    final token = await tokenService.getToken();
+    final isLoggedIn = token != null && token.isNotEmpty;
 
-  if (!mounted) return;
+    if (!mounted) return;
 
-  Navigator.pushReplacementNamed(
-    context,
-    isLoggedIn ? "/dashboard" : "/onboarding",
-  );
-}
+    Navigator.pushReplacementNamed(
+      context,
+      isLoggedIn ? "/dashboard" : "/onboarding",
+    );
+  }
+
   @override
   void dispose() {
     _navigationTimer?.cancel();
@@ -86,15 +87,14 @@ Future<void> _handleNavigation() async {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+
     return Scaffold(
+      backgroundColor: colorScheme.surface,
       body: Stack(
         children: [
-          Container(
-            width: double.infinity,
-            height: double.infinity,
-            color: Colors.black,
-          ),
-
+          // ── Logo + dots + tagline ──────────────────────────────────────
           Center(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -118,12 +118,12 @@ Future<void> _handleNavigation() async {
                   duration: const Duration(milliseconds: 600),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
-                    children: const [
-                      AnimatedDot(delay: 0),
-                      SizedBox(width: 6),
-                      AnimatedDot(delay: 300),
-                      SizedBox(width: 6),
-                      AnimatedDot(delay: 600),
+                    children: [
+                      AnimatedDot(delay: 0,   color: colorScheme.primary),
+                      const SizedBox(width: 6),
+                      AnimatedDot(delay: 300, color: colorScheme.primary),
+                      const SizedBox(width: 6),
+                      AnimatedDot(delay: 600, color: colorScheme.primary),
                     ],
                   ),
                 ),
@@ -133,12 +133,11 @@ Future<void> _handleNavigation() async {
                 AnimatedOpacity(
                   opacity: showTagline ? 1 : 0,
                   duration: const Duration(milliseconds: 700),
-                  child: const Text(
+                  child: Text(
                     "STREAM WITHOUT LIMITS",
-                    style: TextStyle(
+                    style: textTheme.bodyMedium?.copyWith(
                       letterSpacing: 6,
                       fontSize: 12,
-                      color: Colors.white60,
                     ),
                   ),
                 ),
@@ -146,6 +145,7 @@ Future<void> _handleNavigation() async {
             ),
           ),
 
+          // ── Bottom accent line ─────────────────────────────────────────
           Positioned(
             bottom: 0,
             left: 0,
@@ -155,11 +155,11 @@ Future<void> _handleNavigation() async {
               duration: const Duration(milliseconds: 900),
               child: Container(
                 height: 1,
-                decoration: const BoxDecoration(
+                decoration: BoxDecoration(
                   gradient: LinearGradient(
                     colors: [
                       Colors.transparent,
-                      Colors.blue,
+                      colorScheme.primary,
                       Colors.transparent,
                     ],
                   ),
@@ -173,9 +173,13 @@ Future<void> _handleNavigation() async {
   }
 }
 
+// ── Animated dot ────────────────────────────────────────────────────────────
+
 class AnimatedDot extends StatefulWidget {
   final int delay;
-  const AnimatedDot({super.key, required this.delay});
+  final Color color;
+
+  const AnimatedDot({super.key, required this.delay, required this.color});
 
   @override
   State<AnimatedDot> createState() => _AnimatedDotState();
@@ -218,9 +222,9 @@ class _AnimatedDotState extends State<AnimatedDot>
       child: Container(
         height: 8,
         width: 8,
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           shape: BoxShape.circle,
-          color: Colors.blue,
+          color: widget.color,
         ),
       ),
     );
