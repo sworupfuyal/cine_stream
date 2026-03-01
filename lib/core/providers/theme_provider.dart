@@ -1,23 +1,32 @@
-import 'package:cine_stream/core/services/storage/user_session_service.dart';
-import 'package:flutter_riverpod/legacy.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-final themeProvider = StateNotifierProvider<ThemeNotifier, bool>((ref) {
-  final prefs = ref.watch(sharedPreferencesProvider);
-  return ThemeNotifier(prefs);
-});
+const _keyTheme = 'is_dark_theme';
 
-class ThemeNotifier extends StateNotifier<bool> {
-  final SharedPreferences _prefs;
-  static const _key = 'isDarkTheme';
-
-  ThemeNotifier(this._prefs) : super(_prefs.getBool('isDarkTheme') ?? true);
-  // defaults to dark theme, change to false if you want light as default
-
-  void toggleTheme() {
-    state = !state;
-    _prefs.setBool(_key, state);
+class ThemeNotifier extends Notifier<bool> {
+  @override
+  bool build() {
+    _load();
+    return true; // default dark
   }
 
-  bool get isDark => state;
+  Future<void> _load() async {
+    final prefs = await SharedPreferences.getInstance();
+    state = prefs.getBool(_keyTheme) ?? true;
+  }
+
+  /// Manual toggle (used by the Settings switch)
+  Future<void> toggleTheme() => setTheme(isDark: !state);
+
+  /// Programmatic set (used by the light sensor)
+  Future<void> setTheme({required bool isDark}) async {
+    if (state == isDark) return;
+    state = isDark;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_keyTheme, isDark);
+  }
 }
+
+final themeProvider = NotifierProvider<ThemeNotifier, bool>(
+  ThemeNotifier.new,
+);

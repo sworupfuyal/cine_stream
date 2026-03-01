@@ -141,7 +141,7 @@ class MovieDetailPage extends ConsumerWidget {
     final reviewState = ref.watch(reviewProvider(movie.id));
 
     return Scaffold(
-      backgroundColor: colors.background,
+      backgroundColor: colors.surface,
       body: Container(
         decoration: BoxDecoration(
           gradient: LinearGradient(
@@ -161,6 +161,7 @@ class MovieDetailPage extends ConsumerWidget {
               pinned: true,
               stretch: true,
               backgroundColor: Colors.transparent,
+              // ── Only back button — no duplicate action buttons ──────────
               leading: IconButton(
                 icon: Container(
                   padding: const EdgeInsets.all(6),
@@ -172,52 +173,6 @@ class MovieDetailPage extends ConsumerWidget {
                 ),
                 onPressed: () => Navigator.pop(context),
               ),
-              actions: [
-                if (!listStatus.isLoading) ...[
-                  IconButton(
-                    tooltip: listStatus.isFavorite
-                        ? 'Remove from Favourites'
-                        : 'Add to Favourites',
-                    icon: Icon(
-                      listStatus.isFavorite
-                          ? Icons.favorite
-                          : Icons.favorite_border,
-                      color:
-                          listStatus.isFavorite ? colors.error : Colors.white,
-                    ),
-                    onPressed: () => ref
-                        .read(_listStatusProvider(movie.id).notifier)
-                        .toggleFavorite(),
-                  ),
-                  IconButton(
-                    tooltip: listStatus.isWatchLater
-                        ? 'Remove from Watch Later'
-                        : 'Add to Watch Later',
-                    icon: Icon(
-                      listStatus.isWatchLater
-                          ? Icons.watch_later
-                          : Icons.watch_later_outlined,
-                      color: listStatus.isWatchLater
-                          ? colors.primary
-                          : Colors.white,
-                    ),
-                    onPressed: () => ref
-                        .read(_listStatusProvider(movie.id).notifier)
-                        .toggleWatchLater(),
-                  ),
-                ] else
-                  const Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 16),
-                    child: Center(
-                      child: SizedBox(
-                        width: 18,
-                        height: 18,
-                        child: CircularProgressIndicator(
-                            strokeWidth: 2, color: Colors.white),
-                      ),
-                    ),
-                  ),
-              ],
               flexibleSpace: FlexibleSpaceBar(
                 stretchModes: const [
                   StretchMode.zoomBackground,
@@ -311,7 +266,6 @@ class MovieDetailPage extends ConsumerWidget {
                         if (movie.genres.isNotEmpty)
                           _MetaBadge(text: movie.genres.first),
                         const Spacer(),
-                        // ── Average rating pill ──────────────────────────
                         if (!reviewState.isLoading &&
                             reviewState.summary != null &&
                             reviewState.summary!.totalReviews > 0)
@@ -325,7 +279,7 @@ class MovieDetailPage extends ConsumerWidget {
                     ),
                     const SizedBox(height: 20),
 
-                    // Action buttons row
+                    // ── Single action row: Play + Favourite + Watch Later ──
                     Row(
                       children: [
                         Expanded(
@@ -341,8 +295,8 @@ class MovieDetailPage extends ConsumerWidget {
                                 borderRadius: BorderRadius.circular(12),
                               ),
                             ),
-                            icon:
-                                const Icon(Icons.play_arrow_rounded, size: 22),
+                            icon: const Icon(Icons.play_arrow_rounded,
+                                size: 22),
                             label: Text(
                               hasVideo ? 'Play Now' : 'Not Available',
                               style: theme.textTheme.bodyLarge?.copyWith(
@@ -356,8 +310,7 @@ class MovieDetailPage extends ConsumerWidget {
                           icon: listStatus.isFavorite
                               ? Icons.favorite
                               : Icons.favorite_border,
-                          label:
-                              listStatus.isFavorite ? 'Saved' : 'Favourite',
+                          label: listStatus.isFavorite ? 'Saved' : 'Favourite',
                           color: colors.error,
                           isActive: listStatus.isFavorite,
                           isLoading: listStatus.isLoading,
@@ -370,7 +323,8 @@ class MovieDetailPage extends ConsumerWidget {
                           icon: listStatus.isWatchLater
                               ? Icons.watch_later
                               : Icons.watch_later_outlined,
-                          label: listStatus.isWatchLater ? 'Added' : 'Later',
+                          label:
+                              listStatus.isWatchLater ? 'Added' : 'Later',
                           color: colors.primary,
                           isActive: listStatus.isWatchLater,
                           isLoading: listStatus.isLoading,
@@ -412,7 +366,8 @@ class MovieDetailPage extends ConsumerWidget {
                         spacing: 8,
                         runSpacing: 8,
                         children: movie.genres
-                            .map((g) => _GenreChip(label: g, colors: colors))
+                            .map((g) =>
+                                _GenreChip(label: g, colors: colors))
                             .toList(),
                       ),
                       const SizedBox(height: 24),
@@ -447,7 +402,7 @@ class MovieDetailPage extends ConsumerWidget {
                       const SizedBox(height: 32),
                     ],
 
-                    // ── Ratings & Reviews section ─────────────────────────
+                    // Ratings & Reviews
                     _ReviewSection(
                       reviewState: reviewState,
                       theme: theme,
@@ -477,7 +432,7 @@ class MovieDetailPage extends ConsumerWidget {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Rating & Reviews section
+// Rating & Reviews section — unchanged
 // ─────────────────────────────────────────────────────────────────────────────
 
 class _ReviewSection extends StatelessWidget {
@@ -498,14 +453,12 @@ class _ReviewSection extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Section header
         Row(
           children: [
             Text(
               'Ratings & Reviews',
-              style: theme.textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
+              style: theme.textTheme.titleMedium
+                  ?.copyWith(fontWeight: FontWeight.bold),
             ),
             const Spacer(),
             if (reviewState.isLoading)
@@ -513,9 +466,7 @@ class _ReviewSection extends StatelessWidget {
                 width: 16,
                 height: 16,
                 child: CircularProgressIndicator(
-                  strokeWidth: 2,
-                  color: colors.primary,
-                ),
+                    strokeWidth: 2, color: colors.primary),
               ),
             if (reviewState.error != null)
               GestureDetector(
@@ -534,13 +485,9 @@ class _ReviewSection extends StatelessWidget {
         ),
         const SizedBox(height: 16),
 
-        // Loading skeleton
-        if (reviewState.isLoading) ...[
-          _ReviewSkeleton(colors: colors),
-        ]
-
-        // Error state
-        else if (reviewState.error != null) ...[
+        if (reviewState.isLoading)
+          _ReviewSkeleton(colors: colors)
+        else if (reviewState.error != null)
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
@@ -553,20 +500,15 @@ class _ReviewSection extends StatelessWidget {
                 Icon(Icons.error_outline, color: colors.error, size: 20),
                 const SizedBox(width: 10),
                 Expanded(
-                  child: Text(
-                    'Could not load reviews',
-                    style: theme.textTheme.bodySmall
-                        ?.copyWith(color: colors.error),
-                  ),
+                  child: Text('Could not load reviews',
+                      style: theme.textTheme.bodySmall
+                          ?.copyWith(color: colors.error)),
                 ),
               ],
             ),
-          ),
-        ]
-
-        // No reviews yet
+          )
         else if (reviewState.summary == null ||
-            reviewState.summary!.totalReviews == 0) ...[
+            reviewState.summary!.totalReviews == 0)
           Container(
             width: double.infinity,
             padding: const EdgeInsets.symmetric(vertical: 28),
@@ -576,50 +518,29 @@ class _ReviewSection extends StatelessWidget {
             ),
             child: Column(
               children: [
-                Icon(
-                  Icons.rate_review_outlined,
-                  size: 40,
-                  color: colors.onSurface.withOpacity(0.25),
-                ),
+                Icon(Icons.rate_review_outlined,
+                    size: 40, color: colors.onSurface.withOpacity(0.25)),
                 const SizedBox(height: 10),
-                Text(
-                  'No reviews yet',
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    color: colors.onSurface.withOpacity(0.4),
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
+                Text('No reviews yet',
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                        color: colors.onSurface.withOpacity(0.4),
+                        fontWeight: FontWeight.w500)),
                 const SizedBox(height: 4),
-                Text(
-                  'Be the first to rate this movie',
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: colors.onSurface.withOpacity(0.3),
-                  ),
-                ),
+                Text('Be the first to rate this movie',
+                    style: theme.textTheme.bodySmall?.copyWith(
+                        color: colors.onSurface.withOpacity(0.3))),
               ],
             ),
-          ),
-        ]
-
-        // Loaded with data
+          )
         else ...[
-          // ── Average rating card ────────────────────────────────────────
           _AverageRatingCard(
-            summary: reviewState.summary!,
-            theme: theme,
-            colors: colors,
-          ),
+              summary: reviewState.summary!, theme: theme, colors: colors),
           const SizedBox(height: 20),
-
-          // ── Individual review cards ────────────────────────────────────
           ...reviewState.summary!.reviews.map(
             (review) => Padding(
               padding: const EdgeInsets.only(bottom: 12),
-              child: _ReviewCard(
-                review: review,
-                theme: theme,
-                colors: colors,
-              ),
+              child:
+                  _ReviewCard(review: review, theme: theme, colors: colors),
             ),
           ),
         ],
@@ -627,10 +548,6 @@ class _ReviewSection extends StatelessWidget {
     );
   }
 }
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Average rating card
-// ─────────────────────────────────────────────────────────────────────────────
 
 class _AverageRatingCard extends StatelessWidget {
   final ReviewSummaryEntity summary;
@@ -654,38 +571,34 @@ class _AverageRatingCard extends StatelessWidget {
       ),
       child: Row(
         children: [
-          // Big number
           Column(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               Text(
                 summary.averageRating.toStringAsFixed(1),
                 style: theme.textTheme.displaySmall?.copyWith(
-                  fontWeight: FontWeight.bold,
-                  color: colors.primary,
-                  height: 1,
-                ),
+                    fontWeight: FontWeight.bold,
+                    color: colors.primary,
+                    height: 1),
               ),
               const SizedBox(height: 6),
-              _StarRow(rating: summary.averageRating, size: 16, colors: colors),
+              _StarRow(
+                  rating: summary.averageRating, size: 16, colors: colors),
               const SizedBox(height: 4),
               Text(
                 '${summary.totalReviews} ${summary.totalReviews == 1 ? 'review' : 'reviews'}',
                 style: theme.textTheme.bodySmall?.copyWith(
-                  color: colors.onSurface.withOpacity(0.5),
-                ),
+                    color: colors.onSurface.withOpacity(0.5)),
               ),
             ],
           ),
           const SizedBox(width: 20),
-          // Rating bars
           Expanded(
             child: Column(
               children: List.generate(5, (i) {
                 final star = 5 - i;
-                final count = summary.reviews
-                    .where((r) => r.rating == star)
-                    .length;
+                final count =
+                    summary.reviews.where((r) => r.rating == star).length;
                 final fraction = summary.totalReviews > 0
                     ? count / summary.totalReviews
                     : 0.0;
@@ -693,15 +606,13 @@ class _AverageRatingCard extends StatelessWidget {
                   padding: const EdgeInsets.symmetric(vertical: 2),
                   child: Row(
                     children: [
-                      Text(
-                        '$star',
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: colors.onSurface.withOpacity(0.5),
-                          fontSize: 11,
-                        ),
-                      ),
+                      Text('$star',
+                          style: theme.textTheme.bodySmall?.copyWith(
+                              color: colors.onSurface.withOpacity(0.5),
+                              fontSize: 11)),
                       const SizedBox(width: 4),
-                      Icon(Icons.star, size: 10,
+                      Icon(Icons.star,
+                          size: 10,
                           color: colors.onSurface.withOpacity(0.4)),
                       const SizedBox(width: 6),
                       Expanded(
@@ -713,22 +624,18 @@ class _AverageRatingCard extends StatelessWidget {
                             backgroundColor:
                                 colors.onSurface.withOpacity(0.1),
                             valueColor: AlwaysStoppedAnimation<Color>(
-                              colors.primary.withOpacity(0.7),
-                            ),
+                                colors.primary.withOpacity(0.7)),
                           ),
                         ),
                       ),
                       const SizedBox(width: 6),
                       SizedBox(
                         width: 18,
-                        child: Text(
-                          '$count',
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            color: colors.onSurface.withOpacity(0.4),
-                            fontSize: 11,
-                          ),
-                          textAlign: TextAlign.right,
-                        ),
+                        child: Text('$count',
+                            style: theme.textTheme.bodySmall?.copyWith(
+                                color: colors.onSurface.withOpacity(0.4),
+                                fontSize: 11),
+                            textAlign: TextAlign.right),
                       ),
                     ],
                   ),
@@ -742,25 +649,18 @@ class _AverageRatingCard extends StatelessWidget {
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Individual review card
-// ─────────────────────────────────────────────────────────────────────────────
-
 class _ReviewCard extends StatelessWidget {
   final ReviewEntity review;
   final ThemeData theme;
   final ColorScheme colors;
 
-  const _ReviewCard({
-    required this.review,
-    required this.theme,
-    required this.colors,
-  });
+  const _ReviewCard(
+      {required this.review, required this.theme, required this.colors});
 
   String _formatDate(DateTime dt) {
     const months = [
-      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+      'Jan','Feb','Mar','Apr','May','Jun',
+      'Jul','Aug','Sep','Oct','Nov','Dec'
     ];
     return '${months[dt.month - 1]} ${dt.day}, ${dt.year}';
   }
@@ -783,10 +683,8 @@ class _ReviewCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Header row
           Row(
             children: [
-              // Avatar
               CircleAvatar(
                 radius: 18,
                 backgroundColor: colors.primary.withOpacity(0.15),
@@ -795,9 +693,7 @@ class _ReviewCard extends StatelessWidget {
                       ? review.user.fullName[0].toUpperCase()
                       : '?',
                   style: theme.textTheme.bodyMedium?.copyWith(
-                    color: colors.primary,
-                    fontWeight: FontWeight.bold,
-                  ),
+                      color: colors.primary, fontWeight: FontWeight.bold),
                 ),
               ),
               const SizedBox(width: 10),
@@ -807,12 +703,9 @@ class _ReviewCard extends StatelessWidget {
                   children: [
                     Row(
                       children: [
-                        Text(
-                          review.user.fullName,
-                          style: theme.textTheme.bodyMedium?.copyWith(
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
+                        Text(review.user.fullName,
+                            style: theme.textTheme.bodyMedium
+                                ?.copyWith(fontWeight: FontWeight.w600)),
                         if (review.isOwn) ...[
                           const SizedBox(width: 6),
                           Container(
@@ -822,45 +715,32 @@ class _ReviewCard extends StatelessWidget {
                               color: colors.primary.withOpacity(0.15),
                               borderRadius: BorderRadius.circular(4),
                             ),
-                            child: Text(
-                              'You',
-                              style: theme.textTheme.bodySmall?.copyWith(
-                                color: colors.primary,
-                                fontSize: 10,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
+                            child: Text('You',
+                                style: theme.textTheme.bodySmall?.copyWith(
+                                    color: colors.primary,
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.w600)),
                           ),
                         ],
                       ],
                     ),
                     const SizedBox(height: 2),
-                    Text(
-                      _formatDate(review.createdAt),
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: colors.onSurface.withOpacity(0.4),
-                        fontSize: 11,
-                      ),
-                    ),
+                    Text(_formatDate(review.createdAt),
+                        style: theme.textTheme.bodySmall?.copyWith(
+                            color: colors.onSurface.withOpacity(0.4),
+                            fontSize: 11)),
                   ],
                 ),
               ),
-              // Star rating
               _StarRow(
                   rating: review.rating.toDouble(), size: 14, colors: colors),
             ],
           ),
-
-          // Comment
           if (review.comment != null && review.comment!.isNotEmpty) ...[
             const SizedBox(height: 10),
-            Text(
-              review.comment!,
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: colors.onSurface.withOpacity(0.75),
-                height: 1.5,
-              ),
-            ),
+            Text(review.comment!,
+                style: theme.textTheme.bodyMedium?.copyWith(
+                    color: colors.onSurface.withOpacity(0.75), height: 1.5)),
           ],
         ],
       ),
@@ -868,20 +748,13 @@ class _ReviewCard extends StatelessWidget {
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Star row widget
-// ─────────────────────────────────────────────────────────────────────────────
-
 class _StarRow extends StatelessWidget {
   final double rating;
   final double size;
   final ColorScheme colors;
 
-  const _StarRow({
-    required this.rating,
-    required this.size,
-    required this.colors,
-  });
+  const _StarRow(
+      {required this.rating, required this.size, required this.colors});
 
   @override
   Widget build(BuildContext context) {
@@ -906,22 +779,17 @@ class _StarRow extends StatelessWidget {
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Rating pill (shown inline in meta row)
-// ─────────────────────────────────────────────────────────────────────────────
-
 class _RatingPill extends StatelessWidget {
   final double rating;
   final int total;
   final ColorScheme colors;
   final ThemeData theme;
 
-  const _RatingPill({
-    required this.rating,
-    required this.total,
-    required this.colors,
-    required this.theme,
-  });
+  const _RatingPill(
+      {required this.rating,
+      required this.total,
+      required this.colors,
+      required this.theme});
 
   @override
   Widget build(BuildContext context) {
@@ -937,34 +805,22 @@ class _RatingPill extends StatelessWidget {
         children: [
           const Icon(Icons.star, size: 13, color: Color(0xFFFFC107)),
           const SizedBox(width: 4),
-          Text(
-            rating.toStringAsFixed(1),
-            style: theme.textTheme.bodySmall?.copyWith(
-              color: const Color(0xFFFFC107),
-              fontWeight: FontWeight.bold,
-              fontSize: 12,
-            ),
-          ),
-          Text(
-            ' ($total)',
-            style: theme.textTheme.bodySmall?.copyWith(
-              color: colors.onSurface.withOpacity(0.5),
-              fontSize: 11,
-            ),
-          ),
+          Text(rating.toStringAsFixed(1),
+              style: theme.textTheme.bodySmall?.copyWith(
+                  color: const Color(0xFFFFC107),
+                  fontWeight: FontWeight.bold,
+                  fontSize: 12)),
+          Text(' ($total)',
+              style: theme.textTheme.bodySmall?.copyWith(
+                  color: colors.onSurface.withOpacity(0.5), fontSize: 11)),
         ],
       ),
     );
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Loading skeleton for reviews
-// ─────────────────────────────────────────────────────────────────────────────
-
 class _ReviewSkeleton extends StatelessWidget {
   final ColorScheme colors;
-
   const _ReviewSkeleton({required this.colors});
 
   Widget _bone({double? width, double height = 12, double radius = 6}) =>
@@ -995,9 +851,8 @@ class _ReviewSkeleton extends StatelessWidget {
               Row(
                 children: [
                   CircleAvatar(
-                    radius: 18,
-                    backgroundColor: colors.onSurface.withOpacity(0.08),
-                  ),
+                      radius: 18,
+                      backgroundColor: colors.onSurface.withOpacity(0.08)),
                   const SizedBox(width: 10),
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -1020,10 +875,6 @@ class _ReviewSkeleton extends StatelessWidget {
     );
   }
 }
-
-// ─────────────────────────────────────────────────────────────────────────────
-// List action button
-// ─────────────────────────────────────────────────────────────────────────────
 
 class _ListActionButton extends StatelessWidget {
   final IconData icon;
@@ -1067,17 +918,16 @@ class _ListActionButton extends StatelessWidget {
             ? SizedBox(
                 width: 18,
                 height: 18,
-                child:
-                    CircularProgressIndicator(strokeWidth: 2, color: color),
+                child: CircularProgressIndicator(strokeWidth: 2, color: color),
               )
             : Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(
-                    icon,
-                    color: isActive ? color : colors.onSurface.withOpacity(0.4),
-                    size: 20,
-                  ),
+                  Icon(icon,
+                      color: isActive
+                          ? color
+                          : colors.onSurface.withOpacity(0.4),
+                      size: 20),
                   const SizedBox(height: 4),
                   Text(
                     label,
@@ -1096,9 +946,7 @@ class _ListActionButton extends StatelessWidget {
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Small widgets
-// ─────────────────────────────────────────────────────────────────────────────
+// ── Small widgets ─────────────────────────────────────────────────────────────
 
 class _PlaceholderBg extends StatelessWidget {
   final ColorScheme colors;
@@ -1128,13 +976,10 @@ class _MetaBadge extends StatelessWidget {
         color: colors.onSurface.withOpacity(0.1),
         borderRadius: BorderRadius.circular(6),
       ),
-      child: Text(
-        text,
-        style: theme.textTheme.bodySmall?.copyWith(
-          color: colors.onSurface.withOpacity(0.7),
-          fontWeight: FontWeight.w500,
-        ),
-      ),
+      child: Text(text,
+          style: theme.textTheme.bodySmall?.copyWith(
+              color: colors.onSurface.withOpacity(0.7),
+              fontWeight: FontWeight.w500)),
     );
   }
 }
@@ -1154,14 +999,11 @@ class _GenreChip extends StatelessWidget {
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: colors.primary.withOpacity(0.3)),
       ),
-      child: Text(
-        label,
-        style: textTheme.bodySmall?.copyWith(
-          fontSize: 12,
-          color: colors.primary,
-          fontWeight: FontWeight.w500,
-        ),
-      ),
+      child: Text(label,
+          style: textTheme.bodySmall?.copyWith(
+              fontSize: 12,
+              color: colors.primary,
+              fontWeight: FontWeight.w500)),
     );
   }
 }
@@ -1186,12 +1028,9 @@ class _CastChip extends StatelessWidget {
             Icon(Icons.person_outline,
                 size: 14, color: colors.onSurface.withOpacity(0.4)),
             const SizedBox(width: 4),
-            Text(
-              name,
-              style: theme.textTheme.bodySmall?.copyWith(
-                color: colors.onSurface.withOpacity(0.7),
-              ),
-            ),
+            Text(name,
+                style: theme.textTheme.bodySmall?.copyWith(
+                    color: colors.onSurface.withOpacity(0.7))),
           ],
         ),
       );
@@ -1203,31 +1042,24 @@ class _InfoRow extends StatelessWidget {
   final ThemeData theme;
   final ColorScheme colors;
 
-  const _InfoRow({
-    required this.label,
-    required this.value,
-    required this.theme,
-    required this.colors,
-  });
+  const _InfoRow(
+      {required this.label,
+      required this.value,
+      required this.theme,
+      required this.colors});
 
   @override
   Widget build(BuildContext context) => Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            '$label: ',
-            style: theme.textTheme.bodyMedium?.copyWith(
-              color: colors.onSurface.withOpacity(0.4),
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          Expanded(
-            child: Text(
-              value,
+          Text('$label: ',
               style: theme.textTheme.bodyMedium?.copyWith(
-                color: colors.onSurface.withOpacity(0.7),
-              ),
-            ),
+                  color: colors.onSurface.withOpacity(0.4),
+                  fontWeight: FontWeight.w600)),
+          Expanded(
+            child: Text(value,
+                style: theme.textTheme.bodyMedium?.copyWith(
+                    color: colors.onSurface.withOpacity(0.7))),
           ),
         ],
       );

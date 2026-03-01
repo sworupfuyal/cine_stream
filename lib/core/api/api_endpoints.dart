@@ -8,12 +8,10 @@ class ApiEndpoints {
   // Configuration
   // ─────────────────────────────────────────────────────────────
   static const bool isPhysicalDevice = true; // set true for real device
-  static const String _ipAddress = '192.168.176.1'; // your local machine IP
+  static const String _ipAddress = '192.168.1.93'; // your local machine IP
   static const int _port = 6050;
 
-  // ─────────────────────────────────────────────────────────────
   // Host Resolution
-  // ─────────────────────────────────────────────────────────────
   static String get _host {
     if (isPhysicalDevice) return _ipAddress;
 

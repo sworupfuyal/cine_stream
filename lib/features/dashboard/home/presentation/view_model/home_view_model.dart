@@ -51,6 +51,16 @@ class HomeViewModel extends StateNotifier<HomeState> {
     await Future.wait([fetchMovies(), fetchGenres()]);
   }
 
+  /// Extracts unique genres from the currently loaded movies.
+  /// Used as a reliable fallback when the genres API fails or returns nothing.
+  List<String> _genresFromMovies() {
+    return state.movies
+        .expand((m) => m.genres)
+        .toSet()
+        .toList()
+      ..sort();
+  }
+
   /// Initial fetch or refresh — resets to page 1
   Future<void> fetchMovies({bool refresh = false}) async {
     if (refresh) {
@@ -68,10 +78,21 @@ class HomeViewModel extends StateNotifier<HomeState> {
         genre: state.selectedGenre,
       );
 
+      // ── Derive genres from movies if the genres list is still empty.
+      // This makes chips work even if fetchGenres() failed or returned [].
+      final derivedGenres = state.genres.isEmpty
+          ? (result.movies
+                .expand((m) => m.genres)
+                .toSet()
+                .toList()
+              ..sort())
+          : state.genres;
+
       state = state.copyWith(
         status: HomeStatus.success,
         movies: result.movies,
         pagination: result.pagination,
+        genres: derivedGenres,
       );
     } catch (e) {
       state = state.copyWith(
@@ -95,23 +116,34 @@ class HomeViewModel extends StateNotifier<HomeState> {
         genre: state.selectedGenre,
       );
 
+      // Merge any new genres discovered in later pages
+      final newGenres = result.movies.expand((m) => m.genres).toSet();
+      final mergedGenres = {...state.genres, ...newGenres}.toList()..sort();
+
       state = state.copyWith(
         status: HomeStatus.success,
-        movies: [...state.movies, ...result.movies], // ✅ append
+        movies: [...state.movies, ...result.movies],
         pagination: result.pagination,
         isLoadingMore: false,
+        genres: mergedGenres,
       );
     } catch (e) {
-      // Don't replace whole screen with error — just stop the spinner
       state = state.copyWith(isLoadingMore: false);
     }
   }
 
+  /// Tries the genres API endpoint. If it returns data, use it.
+  /// If it fails or returns empty, genres will be derived from movies instead.
   Future<void> fetchGenres() async {
     try {
       final genres = await _getGenres();
-      state = state.copyWith(genres: genres);
-    } catch (_) {}
+      if (genres.isNotEmpty) {
+        state = state.copyWith(genres: genres);
+      }
+      // If empty, fetchMovies() will derive genres from movie data instead
+    } catch (_) {
+      // Silently ignored — fetchMovies() handles the fallback
+    }
   }
 
   Future<void> selectGenre(String? genre) async {

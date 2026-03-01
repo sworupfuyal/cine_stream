@@ -1,4 +1,5 @@
 import 'package:chewie/chewie.dart';
+import 'package:cine_stream/core/api/api_endpoints.dart';
 import 'package:cine_stream/features/dashboard/home/domain/entities/movie_entity.dart';
 import 'package:cine_stream/features/review/domain/entities/review_entity.dart';
 import 'package:cine_stream/features/review/presentation/state/review_state.dart';
@@ -35,13 +36,31 @@ class _MoviePlayerPageState extends ConsumerState<MoviePlayerPage> {
       DeviceOrientation.landscapeRight,
       DeviceOrientation.portraitUp,
     ]);
-    _initPlayer();
+    // Delay initialization until after widget is built
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _initPlayer();
+    });
   }
 
   Future<void> _initPlayer() async {
     final colors = Theme.of(context).colorScheme;
 
     try {
+      // ──────────────────────────────────────────────────────────────
+      // DEBUG: Print server configuration
+      // ──────────────────────────────────────────────────────────────
+      print('╔════════════════════════════════════════════════════════════╗');
+      print('║          VIDEO PLAYER INITIALIZATION DEBUG                 ║');
+      print('╠════════════════════════════════════════════════════════════╣');
+      print('║ Server URL: ${ApiEndpoints.serverUrl}');
+      print('║ Video URL: ${widget.videoUrl}');
+      print('║ URL is valid: ${Uri.tryParse(widget.videoUrl) != null}');
+      print('╚════════════════════════════════════════════════════════════╝');
+      
+      if (widget.videoUrl.isEmpty) {
+        throw Exception('❌ Video URL is empty');
+      }
+
       _videoPlayerController = VideoPlayerController.networkUrl(
         Uri.parse(widget.videoUrl),
         videoPlayerOptions: VideoPlayerOptions(
@@ -50,7 +69,11 @@ class _MoviePlayerPageState extends ConsumerState<MoviePlayerPage> {
         ),
       );
 
+      print('⏳ Initializing VideoPlayerController... (this may take a few seconds)');
       await _videoPlayerController!.initialize();
+      print('✅ VideoPlayerController initialized successfully');
+      print('📐 Video aspect ratio: ${_videoPlayerController!.value.aspectRatio}');
+      print('⏱️  Video duration: ${_videoPlayerController!.value.duration}');
 
       _chewieController = ChewieController(
         videoPlayerController: _videoPlayerController!,
@@ -81,8 +104,11 @@ class _MoviePlayerPageState extends ConsumerState<MoviePlayerPage> {
         ),
       );
 
+      print('✅ ChewieController created and ready to play');
       if (mounted) setState(() => _isInitialized = true);
     } catch (e) {
+      print('❌ VIDEO PLAYER ERROR: $e');
+      print('🔍 Stack trace: ${StackTrace.current}');
       if (mounted) setState(() => _error = e.toString());
     }
   }
@@ -1193,37 +1219,42 @@ class _PlayerError extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       color: Colors.black,
-      child: Center(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Icon(Icons.error_outline, color: Colors.white54, size: 48),
-              const SizedBox(height: 12),
-              const Text('Failed to load video',
-                  style: TextStyle(color: Colors.white70, fontSize: 16)),
-              const SizedBox(height: 6),
-              const Text(
-                'Your device may not support this video format.\nTry a lower quality if available.',
-                textAlign: TextAlign.center,
-                style: TextStyle(color: Colors.white38, fontSize: 12),
-              ),
-              const SizedBox(height: 6),
-              Text(
-                message,
-                textAlign: TextAlign.center,
-                maxLines: 3,
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(color: Colors.white24, fontSize: 11),
-              ),
-              const SizedBox(height: 20),
-              ElevatedButton.icon(
-                onPressed: onRetry,
-                icon: const Icon(Icons.refresh),
-                label: const Text('Retry'),
-              ),
-            ],
+      child: SingleChildScrollView(
+        child: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.error_outline, color: Colors.white54, size: 48),
+                const SizedBox(height: 12),
+                const Text('Failed to load video',
+                    style: TextStyle(color: Colors.white70, fontSize: 16)),
+                const SizedBox(height: 6),
+                const Text(
+                  'Your device may not support this video format.\nTry a lower quality if available.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: Colors.white38, fontSize: 12),
+                ),
+                const SizedBox(height: 6),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: Text(
+                    message,
+                    textAlign: TextAlign.center,
+                    maxLines: 5,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(color: Colors.white24, fontSize: 11),
+                  ),
+                ),
+                const SizedBox(height: 20),
+                ElevatedButton.icon(
+                  onPressed: onRetry,
+                  icon: const Icon(Icons.refresh),
+                  label: const Text('Retry'),
+                ),
+              ],
+            ),
           ),
         ),
       ),

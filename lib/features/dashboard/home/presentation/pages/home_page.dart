@@ -182,7 +182,7 @@ class _Header extends StatelessWidget {
         children: [
           Expanded(
             child: Text(
-              'CineStream',
+              'CineStream Originals',
               style: theme.textTheme.headlineSmall?.copyWith(
                 fontWeight: FontWeight.bold,
               ),
