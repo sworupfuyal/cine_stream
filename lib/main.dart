@@ -1,6 +1,7 @@
 import 'package:cine_stream/core/services/hive/hive_service.dart';
 import 'package:cine_stream/core/services/storage/user_session_service.dart';
 import 'package:cine_stream/core/providers/theme_provider.dart'; // Add this
+import 'package:cine_stream/core/providers/light_theme_provider.dart';
 import 'package:cine_stream/features/auth/presentation/pages/signin_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -47,7 +48,9 @@ class MyApp extends ConsumerWidget { // Changed from StatelessWidget
         "/onboarding": (_) => const OnboardingScreen(),
         "/signup": (_) => const SignupScreen(),
         "/signin": (_) => const SignInScreen(),
-        "/dashboard": (_) => const BottomNavigationScreen(),
+        "/dashboard": (_) => const LightThemeListener(
+              child: BottomNavigationScreen(),
+            ),
       },
     );
   }
